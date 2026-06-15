@@ -28,7 +28,11 @@ The original 5-channel mix has no discrete LFE channel; low-frequency content is
 | 5 (Ls)  | Old channel 4, high-passed, -3 dB |
 | 6 (Rs)  | Old channel 5, high-passed, -3 dB |
 
+The surround channels are attenuated by 3 dB to match the cinema playback calibration of the DTS-6D/DTS-6AD processor (see DTS-6D/DTS-6AD documentation).
+
 If the LFE extraction causes clipping, the peak level is detected and all channels are attenuated equally to prevent distortion.
+
+> **Note:** For films released before January 1, 1999 the LFE must be lowered by 3 dB (`--lfe-gain -3`), because the subwoofer calibration of +10 dB was only adopted from that date onward.
 
 ### 3. Speed Adjustment
 
@@ -60,7 +64,7 @@ python ProcessCinemaDTSFiles.py -o merged.wav "part*.wav"
 | `-o`, `--output` | Output WAV file path (required) | - |
 | `--max-overlap` | Maximum expected overlap in seconds | 4 |
 | `--no-lfe` | Disable LFE channel extraction (ch 4-6 remapping) | off |
-| `--lfe-gain` | Gain for the extracted LFE channel in dB | 6 |
+| `--lfe-gain` | Additional LFE gain adjustment in dB, added to the internal base gain of +6 dB | 0 |
 | `--slowdown` | Slow down output by factor 0.999 (24 -> 23.976 FPS) | off |
 | `--write-tmp` | Write trimmed intermediate files for debugging | off |
 | `--signal-cut-length` | Extra margin before detected signal tone in ms | 200 |
@@ -79,9 +83,9 @@ Merge without LFE extraction:
 python ProcessCinemaDTSFiles.py -o merged.wav --no-lfe "part*.wav"
 ```
 
-Merge with custom LFE gain and debug output:
+Merge with custom LFE gain adjustment and debug output:
 
 ```bash
-python ProcessCinemaDTSFiles.py -o merged.wav --lfe-gain 10 --write-tmp "part*.wav"
+python ProcessCinemaDTSFiles.py -o merged.wav --lfe-gain -3 --write-tmp "part*.wav"
 ```
 

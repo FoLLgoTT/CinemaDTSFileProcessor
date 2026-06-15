@@ -23,9 +23,13 @@ This script performs three main tasks:
      channel; low-frequency content is carried in the surround channels.
      The script extracts the LFE from the surround channels using a
      Linkwitz-Riley 4th-order crossover filter and remaps the result to a
-     standard 5.1 channel layout.  If the LFE extraction causes clipping,
-     the peak level is detected and all channels are attenuated equally
-     to prevent distortion.
+     standard 5.1 channel layout.  The surround channels are attenuated
+     by 3 dB to match the cinema playback calibration of the DTS-6D/
+     DTS-6AD processor.  If the LFE extraction causes clipping, the peak
+     level is detected and all channels are attenuated equally to prevent
+     distortion.  For films released before January 1, 1999 the LFE must be
+     lowered by 3 dB (--lfe-gain -3), because the subwoofer calibration
+     of +10 dB was only adopted from that date onward.
 
   3. **Speed adjustment** - Cinema DTS CDs are mastered at 24 FPS.  For
      playback at the NTSC-standard 23.976 FPS the audio must be slowed
@@ -613,8 +617,9 @@ def main():
                     help="Maximum expected overlap in seconds (default: 4)")
     ap.add_argument("--no-lfe", action="store_true",
                     help="Disable LFE channel extraction (ch 4-6 remapping)")
-    ap.add_argument("--lfe-gain", type=float, default=6.0,
-                     help="Gain for new LFE channel 4 in dB (default: 6)")
+    ap.add_argument("--lfe-gain", type=float, default=0.0,
+                     help="Additional LFE gain adjustment in dB, added to "
+                          "the internal base gain of +6 dB (default: 0)")
     ap.add_argument("--slowdown", action="store_true",
                     help="Slow down output by factor 0.001 (reduce sample rate)")
     ap.add_argument("--write-tmp", action="store_true",
@@ -642,7 +647,7 @@ def main():
     merge(resolved, args.output,
           max_overlap_s=args.max_overlap,
           no_lfe=args.no_lfe,
-          lfe_gain_db=args.lfe_gain,
+          lfe_gain_db=6.0 + args.lfe_gain,
           slowdown=args.slowdown,
           write_tmp=args.write_tmp,
           signal_cut_ms=args.signal_cut_length)
