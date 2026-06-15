@@ -485,10 +485,6 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
 
     # Optionally write trimmed first file.
     out_dir = os.path.dirname(output) or "."
-    if write_tmp:
-        tmp1 = os.path.join(out_dir, f"_tmp_01_{os.path.basename(files[0])}")
-        sf.write(tmp1, merged, sr, format="RF64", subtype=subtype)
-        print(f"  [TMP] {tmp1}  ({len(merged) / sr:.2f} s)")
 
     for i, path in enumerate(files[1:], 2):
         audio, sr2 = sf.read(path, dtype="float32")
@@ -513,12 +509,6 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
                 sys.exit(f"[ERR] No trailing tone found in file {i}. Aborting.")
         else:
             trimmed = audio
-
-        # Optionally write trimmed file.
-        if write_tmp:
-            tmp_name = os.path.join(out_dir, f"_tmp_{i:02d}_{os.path.basename(path)}")
-            sf.write(tmp_name, trimmed, sr, format="RF64", subtype=subtype)
-            print(f"  [TMP] {tmp_name}  ({len(trimmed) / sr:.2f} s)")
 
         # Overlap detection against the silence-trimmed start of this file,
         # because the actual content (overlap) begins after the silence.
@@ -563,29 +553,56 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
         if rms_diff > 0.01:
             print(f"  [WARN] Overlap mismatch is high ({diff_db:.1f} dB).")
 
-        # Optionally write both sides of the overlap for manual inspection.
+        # Optionally write tail+head concatenated with 1 s silence for manual inspection.
         if write_tmp:
-            ov_tail_name = os.path.join(out_dir, f"_tmp_ovl_{i - 1:02d}_{i:02d}_tail.wav")
-            ov_head_name = os.path.join(out_dir, f"_tmp_ovl_{i - 1:02d}_{i:02d}_head.wav")
-            sf.write(ov_tail_name, tail_ov, sr, format="RF64", subtype=subtype)
-            sf.write(ov_head_name, head_ov, sr, format="RF64", subtype=subtype)
-            print(f"  [TMP] {ov_tail_name}  ({len(tail_ov) / sr:.2f} s)")
-            print(f"  [TMP] {ov_head_name}  ({len(head_ov) / sr:.2f} s)")
+            silence = np.zeros((int(sr), tail_ov.shape[1]) if tail_ov.ndim > 1
+                               else int(sr), dtype=tail_ov.dtype)
+            ov_concat = np.concatenate([tail_ov, silence, head_ov])
+            ov_name = os.path.join(out_dir, f"_tmp_ovl_{i - 1:02d}_{i:02d}_tail_head.wav")
+            sf.write(ov_name, ov_concat, sr, format="RF64", subtype=subtype)
+            print(f"  [TMP] {ov_name}  ({len(ov_concat) / sr:.2f} s)")
 
-        # Crossfade in the overlap region using an equal-power curve.
-        # This eliminates clicks and reduces audible artifacts when
-        # the two segments differ slightly.
-        fade_len = ov
-        t = np.linspace(0, np.pi / 2, fade_len, dtype=np.float64)
+        # Short crossfade (20 ms) at the splice point within the overlap.
+        # The overlap is used for position detection only; the actual cut
+        # is made in the middle of the overlap with a brief equal-power
+        # crossfade to avoid clicks without introducing audible beating.
+        xfade_samples = min(int(0.020 * sr), ov)
+        half_xf = xfade_samples // 2
+        # Cut point: middle of the overlap region.
+        cut_in_ov = ov // 2
+        # merged ends with tail_ov; we keep everything up to cut - half_xf,
+        # then crossfade for xfade_samples, then take head from cut + half_xf.
+        t = np.linspace(0, np.pi / 2, xfade_samples, dtype=np.float64)
         fade_out = np.cos(t).astype(np.float32)  # 1 -> 0
         fade_in = np.sin(t).astype(np.float32)   # 0 -> 1
         if merged.ndim > 1:
             fade_out = fade_out[:, np.newaxis]
             fade_in = fade_in[:, np.newaxis]
-        merged[-ov:] = tail_ov * fade_out + head_ov * fade_in
-        merged = np.concatenate([merged, trimmed[ov:]])
-        print(f"  [XFADE] Crossfade applied over {ov / sr:.3f} s "
-              f"({ov} samples)")
+        # Indices within tail_ov / head_ov
+        xf_start = cut_in_ov - half_xf
+        xf_end = xf_start + xfade_samples
+        xfaded = (tail_ov[xf_start:xf_end] * fade_out +
+                  head_ov[xf_start:xf_end] * fade_in)
+        # Assemble: keep merged up to overlap start + xf_start, insert
+        # crossfade, then append remainder from head_ov and new content.
+        merged = np.concatenate([
+            merged[:-ov + xf_start] if xf_start > 0 else merged[:-ov],
+            xfaded,
+            trimmed[xf_end:]
+        ])
+        print(f"  [XFADE] Crossfade {xfade_samples / sr * 1000:.1f} ms "
+              f"at overlap midpoint ({ov / sr:.3f} s overlap)")
+
+        # Optionally write the crossfaded splice region with 5 s context.
+        if write_tmp:
+            context = int(5.0 * sr)
+            splice_pos = len(merged) - len(trimmed[xf_end:])
+            region_start = max(0, splice_pos - context)
+            region_end = min(len(merged), splice_pos + context)
+            splice_region = merged[region_start:region_end]
+            splice_name = os.path.join(out_dir, f"_tmp_splice_{i - 1:02d}_{i:02d}.wav")
+            sf.write(splice_name, splice_region, sr, format="RF64", subtype=subtype)
+            print(f"  [TMP] {splice_name}  ({len(splice_region) / sr:.2f} s)")
 
     total = len(merged) / sr
 
