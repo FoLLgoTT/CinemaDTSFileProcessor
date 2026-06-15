@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-merge_wav.py - Merge decoded APT-X100 WAV files from Cinema DTS CDs.
+ProcessCinemaDTSFiles.py - Merge decoded APT-X100 WAV files from Cinema DTS CDs.
 
 Cinema DTS CDs store the film soundtrack as APT-X100 encoded data split
 across multiple disc tracks.  After decoding, the resulting WAV files
@@ -30,7 +30,7 @@ Requirements
     pip install numpy scipy soundfile
 
 Usage
-    python merge_wav.py -o merged.wav "part*.wav"
+    python ProcessCinemaDTSFiles.py -o merged.wav "part*.wav"
 """
 
 from __future__ import annotations

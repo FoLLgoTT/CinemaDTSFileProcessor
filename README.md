@@ -43,7 +43,7 @@ pip install numpy scipy soundfile
 ## Usage
 
 ```bash
-python merge_wav.py -o merged.wav "part*.wav"
+python ProcessCinemaDTSFiles.py -o merged.wav "part*.wav"
 ```
 
 ### Options
@@ -63,18 +63,18 @@ python merge_wav.py -o merged.wav "part*.wav"
 Merge all parts with LFE extraction and speed adjustment:
 
 ```bash
-python merge_wav.py -o movie_soundtrack.wav --slowdown "part*.wav"
+python ProcessCinemaDTSFiles.py -o movie_soundtrack.wav --slowdown "part*.wav"
 ```
 
 Merge without LFE extraction:
 
 ```bash
-python merge_wav.py -o merged.wav --no-lfe "part*.wav"
+python ProcessCinemaDTSFiles.py -o merged.wav --no-lfe "part*.wav"
 ```
 
 Merge with custom LFE gain and debug output:
 
 ```bash
-python merge_wav.py -o merged.wav --lfe-gain 10 --write-tmp "part*.wav"
+python ProcessCinemaDTSFiles.py -o merged.wav --lfe-gain 10 --write-tmp "part*.wav"
 ```
 
