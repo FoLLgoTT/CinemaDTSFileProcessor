@@ -17,6 +17,8 @@ The decoded WAV segments are joined in playback order. Each segment boundary is 
 
 For some films the overlap between segments may be longer than the default. In that case the `--max-overlap` parameter must be increased.
 
+> **Note:** Not all Cinema DTS CDs contain perfectly mergeable segments. Some segments may be inverted or differ slightly, resulting in low correlation. Such cases are reported as warnings in the output.
+
 ### 2. LFE Extraction
 
 The original 5-channel mix has no discrete LFE channel; low-frequency content is carried in the surround channels. The script extracts the LFE using a Linkwitz-Riley 4th-order crossover filter at 80 Hz and remaps the result to a standard 5.1 channel layout:

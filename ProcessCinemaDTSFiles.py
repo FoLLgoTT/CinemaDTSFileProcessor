@@ -17,7 +17,10 @@ This script performs three main tasks:
      segments have inverted polarity, the inversion is detected
      automatically and corrected.  For some films the overlap between
      segments may be longer than the default; in that case the
-     --max-overlap parameter must be increased.
+     --max-overlap parameter must be increased.  Note that not all
+     Cinema DTS CDs contain perfectly mergeable segments.  Some segments
+     may be inverted or differ slightly, resulting in low correlation.
+     Such cases are reported as warnings in the output.
 
   2. **LFE extraction** - The original 5-channel mix has no discrete LFE
      channel; low-frequency content is carried in the surround channels.
