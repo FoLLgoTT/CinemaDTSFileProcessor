@@ -20,10 +20,10 @@ The original 5-channel mix has no discrete LFE channel; low-frequency content is
 
 | Channel | Source |
 |---------|--------|
-| 1–3     | Unchanged (L, C, R) |
+| 1-3     | Unchanged (L, C, R) |
 | 4 (LFE) | Low-pass of surround channels 5+6 |
-| 5 (Ls)  | Old channel 4, high-passed, ?3 dB |
-| 6 (Rs)  | Old channel 5, high-passed, ?3 dB |
+| 5 (Ls)  | Old channel 4, high-passed, -3 dB |
+| 6 (Rs)  | Old channel 5, high-passed, -3 dB |
 
 ### 3. Speed Adjustment
 
@@ -50,11 +50,11 @@ python merge_wav.py -o merged.wav "part*.wav"
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-o`, `--output` | Output WAV file path (required) | – |
+| `-o`, `--output` | Output WAV file path (required) | - |
 | `--max-overlap` | Maximum expected overlap in seconds | 4 |
-| `--no-lfe` | Disable LFE channel extraction (ch 4–6 remapping) | off |
+| `--no-lfe` | Disable LFE channel extraction (ch 4-6 remapping) | off |
 | `--lfe-gain` | Gain for the extracted LFE channel in dB | 6 |
-| `--slowdown` | Slow down output by factor 0.999 (24 ? 23.976 FPS) | off |
+| `--slowdown` | Slow down output by factor 0.999 (24 -> 23.976 FPS) | off |
 | `--write-tmp` | Write trimmed intermediate files for debugging | off |
 | `--signal-cut-length` | Extra margin before detected signal tone in ms | 200 |
 
