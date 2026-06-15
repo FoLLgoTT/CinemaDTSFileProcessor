@@ -78,6 +78,3 @@ Merge with custom LFE gain and debug output:
 python merge_wav.py -o merged.wav --lfe-gain 10 --write-tmp "part*.wav"
 ```
 
-## License
-
-See [LICENSE](LICENSE) for details.
