@@ -168,11 +168,10 @@ def detect_signal_tone(audio, sr, max_search_s=25, win_ms=30,
         rms_bp_db = 20 * np.log10(max(rms_bp, 1e-10))
         ratio = rms_bp / rms_full if rms_full >= silence_floor else 0.0
         hit = ratio > threshold and rms_full >= silence_floor
-        tag = "<<" if hit else ""
-        print(f"         Ch {ch + 1}: total {rms_db:.1f} dB, "
-              f"tone {rms_bp_db:.1f} dB, ratio {ratio:.4f} {tag}")
         if hit:
             tone_channels.append(ch)
+            print(f"         Ch {ch + 1}: total {rms_db:.1f} dB, "
+                  f"tone {rms_bp_db:.1f} dB, ratio {ratio:.4f}")
     ch_names = ", ".join(str(c + 1) for c in tone_channels)
     print(f"         Signal tone on channel(s): {ch_names}")
   
@@ -530,7 +529,7 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
             trimmed = -trimmed
             print(f"  [INV] File {i} - polarity inverted")
         print(f"  [OVL] Files {i - 1}<>{i} overlap: {ov / sr:.3f} s "
-              f"({ov} samples)")
+              f"({ov} samples). Correlations:")
         for ch_idx, sc in enumerate(scores, 1):
             print(f"         Ch {ch_idx}: {sc:.4f}")
 
@@ -562,8 +561,7 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
             print(f"  [CHK] Overlap diff: {diff_db:.1f} dB  "
                   f"(silent overlap)")
         if rms_diff > 0.01:
-            print(f"  [WARN] Overlap mismatch is high ({diff_db:.1f} dB). "
-                  f"Applying crossfade to reduce artifacts.")
+            print(f"  [WARN] Overlap mismatch is high ({diff_db:.1f} dB).")
 
         # Optionally write both sides of the overlap for manual inspection.
         if write_tmp:
