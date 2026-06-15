@@ -13,7 +13,11 @@ This script performs three main tasks:
      Each segment boundary is handled by detecting and removing the 1 kHz
      marker tone at the end of each part, cutting a 2 s leader from
      appended files, and aligning consecutive segments via
-     cross-correlation to find the exact overlap.
+     cross-correlation to find the exact overlap.  If consecutive
+     segments have inverted polarity, the inversion is detected
+     automatically and corrected.  For some films the overlap between
+     segments may be longer than the default; in that case the
+     --max-overlap parameter must be increased.
 
   2. **LFE extraction** - The original 5-channel mix has no discrete LFE
      channel; low-frequency content is carried in the surround channels.
