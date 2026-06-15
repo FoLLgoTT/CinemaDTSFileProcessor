@@ -23,7 +23,9 @@ This script performs three main tasks:
      channel; low-frequency content is carried in the surround channels.
      The script extracts the LFE from the surround channels using a
      Linkwitz-Riley 4th-order crossover filter and remaps the result to a
-     standard 5.1 channel layout.
+     standard 5.1 channel layout.  If the LFE extraction causes clipping,
+     the peak level is detected and all channels are attenuated equally
+     to prevent distortion.
 
   3. **Speed adjustment** - Cinema DTS CDs are mastered at 24 FPS.  For
      playback at the NTSC-standard 23.976 FPS the audio must be slowed

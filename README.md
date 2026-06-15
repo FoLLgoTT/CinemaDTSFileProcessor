@@ -28,6 +28,8 @@ The original 5-channel mix has no discrete LFE channel; low-frequency content is
 | 5 (Ls)  | Old channel 4, high-passed, -3 dB |
 | 6 (Rs)  | Old channel 5, high-passed, -3 dB |
 
+If the LFE extraction causes clipping, the peak level is detected and all channels are attenuated equally to prevent distortion.
+
 ### 3. Speed Adjustment
 
 Cinema DTS CDs are mastered at 24 FPS. For playback at the NTSC-standard 23.976 FPS the audio must be slowed down by the ratio 23.976/24 (factor 0.999). This is done via polyphase resampling, which preserves pitch. If the source sample rate is 44.1 kHz, it is simultaneously resampled to 48 kHz.
