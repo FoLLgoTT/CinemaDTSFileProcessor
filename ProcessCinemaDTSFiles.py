@@ -13,7 +13,9 @@ This script performs three main tasks:
      Each segment boundary is handled by detecting and removing the 1 kHz
      marker tone at the end of each part, cutting a 2 s leader from
      appended files, and aligning consecutive segments via
-     cross-correlation to find the exact overlap.  If consecutive
+     cross-correlation to find the exact overlap.  The overlap region is
+     joined using an equal-power crossfade, which ensures click-free
+     transitions even when segments differ slightly.  If consecutive
      segments have inverted polarity, the inversion is detected
      automatically and corrected.  For some films the overlap between
      segments may be longer than the default; in that case the
@@ -545,8 +547,6 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
                      f"between files {i - 1} and {i}. Aborting.")
 
         # Both segments contain the same audio in the overlap region.
-        # Keep merged (which already includes the overlap) and append
-        # only the new content from trimmed after the overlap.
         # Validate overlap: compare the overlapping samples.
         tail_ov = merged[-ov:]
         head_ov = trimmed[:ov]
@@ -563,7 +563,7 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
                   f"(silent overlap)")
         if rms_diff > 0.01:
             print(f"  [WARN] Overlap mismatch is high ({diff_db:.1f} dB). "
-                  f"Join may contain artifacts.")
+                  f"Applying crossfade to reduce artifacts.")
 
         # Optionally write both sides of the overlap for manual inspection.
         if write_tmp:
@@ -574,24 +574,20 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
             print(f"  [TMP] {ov_tail_name}  ({len(tail_ov) / sr:.2f} s)")
             print(f"  [TMP] {ov_head_name}  ({len(head_ov) / sr:.2f} s)")
 
+        # Crossfade in the overlap region using an equal-power curve.
+        # This eliminates clicks and reduces audible artifacts when
+        # the two segments differ slightly.
+        fade_len = ov
+        t = np.linspace(0, np.pi / 2, fade_len, dtype=np.float64)
+        fade_out = np.cos(t).astype(np.float32)  # 1 -> 0
+        fade_in = np.sin(t).astype(np.float32)   # 0 -> 1
+        if merged.ndim > 1:
+            fade_out = fade_out[:, np.newaxis]
+            fade_in = fade_in[:, np.newaxis]
+        merged[-ov:] = tail_ov * fade_out + head_ov * fade_in
         merged = np.concatenate([merged, trimmed[ov:]])
-
-        # Check for clicks/pops at the splice point.
-        splice = len(merged) - len(trimmed[ov:])
-        if splice > 0 and splice < len(merged):
-            n_ch_m = merged.shape[1] if merged.ndim > 1 else 1
-            for ch in range(n_ch_m):
-                if merged.ndim > 1:
-                    before = merged[splice - 1, ch]
-                    after = merged[splice, ch]
-                else:
-                    before = merged[splice - 1]
-                    after = merged[splice]
-                jump = abs(float(after) - float(before))
-                if jump > 0.05:
-                    jump_db = 20 * np.log10(max(jump, 1e-10))
-                    print(f"  [WARN] Click at splice point on ch {ch + 1}: "
-                          f"jump {jump:.4f} ({jump_db:.1f} dB)")
+        print(f"  [XFADE] Crossfade applied over {ov / sr:.3f} s "
+              f"({ov} samples)")
 
     total = len(merged) / sr
 

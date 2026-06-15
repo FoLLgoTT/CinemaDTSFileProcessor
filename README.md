@@ -13,6 +13,7 @@ The decoded WAV segments are joined in playback order. Each segment boundary is 
 - Detecting and removing the 1 kHz marker tone at the end of each part.
 - Cutting a 2 s leader from appended files.
 - Aligning consecutive segments via cross-correlation to find the exact overlap.
+- Joining the overlap region using an equal-power crossfade for click-free transitions.
 - Automatic detection and correction of polarity inversion between segments.
 
 For some films the overlap between segments may be longer than the default. In that case the `--max-overlap` parameter must be increased.
