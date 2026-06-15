@@ -29,6 +29,8 @@ The original 5-channel mix has no discrete LFE channel; low-frequency content is
 
 Cinema DTS CDs are mastered at 24 FPS. For playback at the NTSC-standard 23.976 FPS the audio must be slowed down by the ratio 23.976/24 (factor 0.999). This is done via polyphase resampling, which preserves pitch. If the source sample rate is 44.1 kHz, it is simultaneously resampled to 48 kHz.
 
+All processing is done in 32-bit float. The output is written in RF64 format, since the resulting files can exceed the 4 GB limit of standard WAV.
+
 ## Requirements
 
 - Python 3.8+

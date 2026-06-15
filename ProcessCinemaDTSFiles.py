@@ -26,6 +26,10 @@ This script performs three main tasks:
      down by the ratio 23.976/24 (factor 0.999).  This is done via
      polyphase resampling, which preserves pitch.
 
+All processing is done in 32-bit float.  The output is written in RF64
+format, since the resulting files can exceed the 4 GB limit of standard
+WAV.
+
 Requirements
     pip install numpy scipy soundfile
 
@@ -330,10 +334,10 @@ def _linkwitz_riley_hp(data, sr, freq, order=4):
     return out
 
 
-def remap_channels(audio, sr, xover_freq, lfe_boost_db=6.0):
+def remap_channels(audio, sr, xover_freq, lfe_gain_db=6.0):
     """Remap channels 4-6 (0-indexed: 3-5) of a multi-channel array.
 
-    New ch 4 (idx 3): sum of old ch 5+6 (idx 4+5) with LR4 low-pass, +lfe_boost_db
+    New ch 4 (idx 3): sum of old ch 5+6 (idx 4+5) with LR4 low-pass, +lfe_gain_db
     New ch 5 (idx 4): old ch 4 (idx 3) with LR4 high-pass, -3 dB
     New ch 6 (idx 5): old ch 5 (idx 4) with LR4 high-pass, -3 dB
 
@@ -359,7 +363,7 @@ def remap_channels(audio, sr, xover_freq, lfe_boost_db=6.0):
         audio = np.concatenate([audio, extra], axis=1)
         print(f"  [REMAP] Expanded from {n_ch} to 6 channels")
 
-    lfe_gain = 10 ** (lfe_boost_db / 20)
+    lfe_gain = 10 ** (lfe_gain_db / 20)
     hp_gain = 10 ** (-3.0 / 20)
 
     # New channel 4: sum of old 5+6, low-passed, boosted
@@ -369,7 +373,7 @@ def remap_channels(audio, sr, xover_freq, lfe_boost_db=6.0):
     # New channel 6: old channel 5, high-passed, -3 dB
     audio[:, 5] = _linkwitz_riley_hp(old_ch5, sr, xover_freq) * hp_gain
 
-    print(f"  [GAIN] Ch 4: +{lfe_boost_db:.1f} dB | Ch 5,6: -3.0 dB")
+    print(f"  [GAIN] Ch 4: +{lfe_gain_db:.1f} dB | Ch 5,6: -3.0 dB")
 
     # Normalize all channels to prevent clipping.
     peak = np.max(np.abs(audio))
@@ -433,7 +437,7 @@ def time_stretch(audio, sr, speed):
 # -- Main merge logic -----------------------------------------------------
 
 def merge(files, output, max_overlap_s=10, no_lfe=False,
-          lfe_boost_db=6.0, slowdown=False, write_tmp=False,
+          lfe_gain_db=6.0, slowdown=False, write_tmp=False,
           signal_cut_ms=200):
     """Read files in order, remove marker tones, detect overlaps,
     and write a single merged WAV to output."""
@@ -573,7 +577,7 @@ def merge(files, output, max_overlap_s=10, no_lfe=False,
 
     if not no_lfe:
         print(f"\n  [REMAP] Extracting LFE @ 80 Hz (Linkwitz-Riley 4th order)")
-        merged = remap_channels(merged, sr, 80, lfe_boost_db)
+        merged = remap_channels(merged, sr, 80, lfe_gain_db)
     else:
         print("\n  [REMAP] LFE extraction disabled (--no_lfe)")
 
@@ -632,7 +636,7 @@ def main():
     merge(resolved, args.output,
           max_overlap_s=args.max_overlap,
           no_lfe=args.no_lfe,
-          lfe_boost_db=args.lfe_gain,
+          lfe_gain_db=args.lfe_gain,
           slowdown=args.slowdown,
           write_tmp=args.write_tmp,
           signal_cut_ms=args.signal_cut_length)
