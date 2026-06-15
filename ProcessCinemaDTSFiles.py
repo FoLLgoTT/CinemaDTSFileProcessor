@@ -73,7 +73,7 @@ def _bandpass(data, sr, centre, bw=100):
     return sosfilt(sos, data, axis=0)
 
 
-def detect_signal_tone(audio, sr, max_search_s=20, win_ms=30,
+def detect_signal_tone(audio, sr, max_search_s=25, win_ms=30,
                 hop_ms=10, margin_ms=200):
     """Return sample index where a 1 kHz tone begins at the end of
     audio, or None when no tone is found.
