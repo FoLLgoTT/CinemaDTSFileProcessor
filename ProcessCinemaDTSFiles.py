@@ -70,7 +70,7 @@ def _bandpass(data, sr, centre, bw=100):
     return sosfilt(sos, data, axis=0)
 
 
-def detect_tone(audio, sr, max_search_s=20, win_ms=30,
+def detect_signal_tone(audio, sr, max_search_s=20, win_ms=30,
                 hop_ms=10, margin_ms=200):
     """Return sample index where a 1 kHz tone begins at the end of
     audio, or None when no tone is found.
@@ -464,7 +464,7 @@ def merge(files, output, max_overlap_s=10, no_lfe=False,
 
     # Tone removal on first file (only when more segments follow).
     if len(files) > 1:
-        ts, _ = detect_tone(merged, sr, margin_ms=signal_cut_ms)
+        ts, _ = detect_signal_tone(merged, sr, margin_ms=signal_cut_ms)
         if ts is not None:
             total_s = len(merged) / sr
             print(f"  [CUT] File 1 - cutting at {ts / sr:.3f} s "
@@ -493,7 +493,7 @@ def merge(files, output, max_overlap_s=10, no_lfe=False,
 
         # Trailing tone removal (skip for the very last file).
         if i < len(files):
-            ts, _ = detect_tone(audio, sr, margin_ms=signal_cut_ms)
+            ts, _ = detect_signal_tone(audio, sr, margin_ms=signal_cut_ms)
             if ts is not None:
                 total_s = len(audio) / sr
                 print(f"  [CUT] File {i} - cutting at {ts / sr:.3f} s "
