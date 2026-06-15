@@ -9,19 +9,19 @@ must be reassembled into a single continuous multi-channel audio stream.
 
 This script performs three main tasks:
 
-  1. **Merge** – The decoded WAV segments are joined in playback order.
+  1. **Merge** - The decoded WAV segments are joined in playback order.
      Each segment boundary is handled by detecting and removing the 1 kHz
      marker tone at the end of each part, cutting a 2 s leader from
      appended files, and aligning consecutive segments via
      cross-correlation to find the exact overlap.
 
-  2. **LFE extraction** – The original 5-channel mix has no discrete LFE
+  2. **LFE extraction** - The original 5-channel mix has no discrete LFE
      channel; low-frequency content is carried in the surround channels.
      The script extracts the LFE from the surround channels using a
      Linkwitz-Riley 4th-order crossover filter and remaps the result to a
      standard 5.1 channel layout.
 
-  3. **Speed adjustment** – Cinema DTS CDs are mastered at 24 FPS.  For
+  3. **Speed adjustment** - Cinema DTS CDs are mastered at 24 FPS.  For
      playback at the NTSC-standard 23.976 FPS the audio must be slowed
      down by the ratio 23.976/24 (factor 0.999).  This is done via
      polyphase resampling, which preserves pitch.
@@ -599,7 +599,7 @@ def main():
                          "(e.g. 'part*.wav')")
     ap.add_argument("-o", "--output", required=True,
                     help="Output WAV file path")
-    ap.add_argument("--max-overlap"
+    ap.add_argument("--max-overlap", type=float, default=4.0,
                     help="Maximum expected overlap in seconds (default: 4)")
     ap.add_argument("--no-lfe", action="store_true",
                     help="Disable LFE channel extraction (ch 4-6 remapping)")
