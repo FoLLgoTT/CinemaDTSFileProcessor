@@ -258,6 +258,8 @@ def find_overlap(tail, head, sr, max_s=10, ref_s=1.0, min_corr=0.6,
     # Per-channel correlation on filtered data to find best overlap position.
     best_idx = 0
     best_peak = -1.0
+    worst_peak = 0.0
+    worst_idx = 0
     for ch in range(n_ch):
         tc = tail_bp[:, ch] if n_ch > 1 else tail_bp.copy()
         rc = ref_bp[:, ch] if n_ch > 1 else ref_bp.copy()
@@ -273,12 +275,16 @@ def find_overlap(tail, head, sr, max_s=10, ref_s=1.0, min_corr=0.6,
             if peak > best_peak:
                 best_peak = peak
                 best_idx = ci
+            if peak < worst_peak:
+                worst_peak = peak
+                worst_idx = ci
 
-    # If best correlation is negative, try with inverted head.
+    # If the most negative correlation exceeds the most positive one in
+    # absolute value and is below -min_corr, try with inverted head.
     inverted = False
-    if best_peak < 0:
-        print(f"         [OVL] All correlations negative (best {best_peak:.4f}), "
-              f"retrying with inverted head...")
+    if abs(worst_peak) > abs(best_peak) and worst_peak < -min_corr:
+        print(f"         [OVL] Negative correlation ({worst_peak:.4f}) exceeds "
+              f"positive ({best_peak:.4f}), retrying with inverted head...")
         best_idx = 0
         best_peak = -1.0
         ref_bp_inv = -ref_bp
@@ -446,7 +452,7 @@ def time_stretch(audio, sr, speed):
 
 # -- Main merge logic -----------------------------------------------------
 
-def merge(files, output, max_overlap_s=10, no_lfe=False,
+def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
           lfe_gain_db=6.0, slowdown=False, write_tmp=False,
           signal_cut_ms=200):
     """Read files in order, remove marker tones, detect overlaps,
@@ -489,7 +495,7 @@ def merge(files, output, max_overlap_s=10, no_lfe=False,
         cut_samples = int(2.0 * sr)
         if len(audio) > cut_samples:
             audio = audio[cut_samples:]
-            print(f"  [SIL] File {i} - 2.000 s cut from start")
+            print(f"  [SIL] File {i} - 2 s cut from start")
 
         # Trailing tone removal (skip for the very last file).
         if i < len(files):
@@ -512,7 +518,8 @@ def merge(files, output, max_overlap_s=10, no_lfe=False,
 
         # Overlap detection against the silence-trimmed start of this file,
         # because the actual content (overlap) begins after the silence.
-        ov, scores, inverted = find_overlap(merged, audio, sr, max_overlap_s)
+        ov, scores, inverted = find_overlap(merged, audio, sr, max_overlap_s,
+                                             min_corr=min_corr)
         if inverted:
             audio = -audio
             trimmed = -trimmed
@@ -530,8 +537,8 @@ def merge(files, output, max_overlap_s=10, no_lfe=False,
             sys.exit(f"[ERR] No channel available for correlation check "
                      f"between files {i - 1} and {i}. Aborting.")
 
-        if max(scores) < 0.6:
-            sys.exit(f"[ERR] Best correlation {max(scores):.4f} < 0.6 "
+        if max(scores) < min_corr:
+            sys.exit(f"[ERR] Best correlation {max(scores):.4f} < {min_corr} "
                      f"between files {i - 1} and {i}. Aborting.")
 
         # Both segments contain the same audio in the overlap region.
@@ -614,7 +621,10 @@ def main():
     ap.add_argument("-o", "--output", required=True,
                     help="Output WAV file path")
     ap.add_argument("--max-overlap", type=float, default=4.0,
-                    help="Maximum expected overlap in seconds (default: 4)")
+                     help="Maximum expected overlap in seconds (default: 4)")
+    ap.add_argument("--min-corr", type=float, default=0.6,
+                     help="Minimum correlation threshold for overlap "
+                          "detection (default: 0.6)")
     ap.add_argument("--no-lfe", action="store_true",
                     help="Disable LFE channel extraction (ch 4-6 remapping)")
     ap.add_argument("--lfe-gain", type=float, default=0.0,
@@ -646,6 +656,7 @@ def main():
 
     merge(resolved, args.output,
           max_overlap_s=args.max_overlap,
+          min_corr=args.min_corr,
           no_lfe=args.no_lfe,
           lfe_gain_db=6.0 + args.lfe_gain,
           slowdown=args.slowdown,

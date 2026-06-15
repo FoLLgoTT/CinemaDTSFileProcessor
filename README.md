@@ -63,6 +63,7 @@ python ProcessCinemaDTSFiles.py -o merged.wav "part*.wav"
 |--------|-------------|---------|
 | `-o`, `--output` | Output WAV file path (required) | - |
 | `--max-overlap` | Maximum expected overlap in seconds | 4 |
+| `--min-corr` | Minimum correlation threshold for overlap detection | 0.6 |
 | `--no-lfe` | Disable LFE channel extraction (ch 4-6 remapping) | off |
 | `--lfe-gain` | Additional LFE gain adjustment in dB, added to the internal base gain of +6 dB | 0 |
 | `--slowdown` | Slow down output by factor 0.999 (24 -> 23.976 FPS) | off |
