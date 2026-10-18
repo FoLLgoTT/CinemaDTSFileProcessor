@@ -75,7 +75,7 @@ def _bandpass(data, sr, centre, bw=100):
     return sosfilt(sos, data, axis=0)
 
 
-def detect_signal_tone(audio, sr, max_search_s=25, win_ms=30,
+def detect_signal_tone(audio, sr, max_search_s=30, win_ms=30,
                 hop_ms=10, margin_ms=200):
     """Return sample index where a 1 kHz tone begins at the end of
     audio, or None when no tone is found.
@@ -458,7 +458,7 @@ def time_stretch(audio, sr, speed):
 
 def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
           lfe_gain_db=6.0, slowdown=False, write_tmp=False,
-          signal_cut_ms=200):
+          signal_cut_ms=200, bit_depth=None):
     """Read files in order, remove marker tones, detect overlaps,
     and write a single merged WAV to output."""
 
@@ -618,8 +618,10 @@ def merge(files, output, max_overlap_s=10, min_corr=0.6, no_lfe=False,
         merged, sr = time_stretch(merged, sr, speed)
         total = len(merged) / sr
 
-    print(f"\n  [OUT] {output}  ({total:.2f} s)")
-    sf.write(output, merged, sr, format="RF64", subtype=subtype)
+    out_subtype = {"16": "PCM_16", "24": "PCM_24", "32": "PCM_32",
+                   "32f": "FLOAT"}.get(bit_depth, subtype)
+    print(f"\n  [OUT] {output}  ({total:.2f} s, {out_subtype})")
+    sf.write(output, merged, sr, format="RF64", subtype=out_subtype)
     print("  [OK]  Done.")
 
 
@@ -651,6 +653,10 @@ def main():
     ap.add_argument("--signal-cut-length", type=float, default=200,
                     help="Extra margin before detected signal tone in ms "
                          "(default: 200)")
+    ap.add_argument("--bit-depth", choices=["16", "24", "32", "32f"],
+                    default=None,
+                    help="Output bit depth: 16, 24, 32 (integer) or 32f "
+                         "(32-bit float). Default: same as input")
     args = ap.parse_args()
 
     def _natural_key(s):
@@ -675,7 +681,8 @@ def main():
           lfe_gain_db=6.0 + args.lfe_gain,
           slowdown=args.slowdown,
           write_tmp=args.write_tmp,
-          signal_cut_ms=args.signal_cut_length)
+          signal_cut_ms=args.signal_cut_length,
+          bit_depth=args.bit_depth)
 
 
 if __name__ == "__main__":
